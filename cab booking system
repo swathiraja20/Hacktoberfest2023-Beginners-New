@@ -1,0 +1,98 @@
+import tkinter as tk
+from tkinter import messagebox
+import sqlite3
+import time
+
+class TaxiBookingSystem:
+
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Taxi Booking System")
+        self.root.geometry("1150x650+50+0")
+        self.root.resizable(False, False)
+
+        self.setup_database()
+
+        # User input variables
+        self.firstname = tk.StringVar()
+        self.surname = tk.StringVar()
+        self.address = tk.StringVar()
+        self.postcode = tk.StringVar()
+        self.mobile = tk.StringVar()
+        self.email = tk.StringVar()
+        self.pickup = tk.StringVar()
+        self.drop = tk.StringVar()
+        self.pooling = tk.StringVar()
+        self.cab_tax = tk.IntVar()
+        self.km = tk.IntVar()
+        self.travel_insurance = tk.IntVar()
+        self.receipt = tk.StringVar()
+        self.paid_tax = tk.StringVar()
+        self.sub_total = tk.StringVar()
+        self.total_cost = tk.StringVar()
+
+        self.create_widgets()
+
+    def setup_database(self):
+        with sqlite3.connect('Users.db') as db:
+            cursor = db.cursor()
+            cursor.execute('CREATE TABLE IF NOT EXISTS user (username TEXT NOT NULL, password TEXT NOT NULL)')
+        db.commit()
+
+    def login(self):
+        # Authenticate user
+        # Add your authentication logic here using the SQLite database
+        authenticated = True  # Replace with actual authentication logic
+
+        if authenticated:
+            self.show_booking_form()
+        else:
+            messagebox.showerror('Oops!', 'Authentication failed. Username not found.')
+
+    def create_account(self):
+        # Create a new account
+        # Add your account creation logic here using the SQLite database
+        account_created = True  # Replace with actual account creation logic
+
+        if account_created:
+            messagebox.showinfo('Success!', 'Account Created!')
+            self.show_login_form()
+        else:
+            messagebox.showerror('Error!', 'Username already taken!')
+
+    def show_booking_form(self):
+        # Replace login form with booking form
+        pass  # Implement the booking form display
+
+    def show_login_form(self):
+        # Replace booking form with login form
+        pass  # Implement the login form display
+
+    def calculate_total_cost(self):
+        # Calculate total cost based on user input
+        # Implement the calculation logic here
+        total_cost = 0  # Replace with the actual calculation
+        self.total_cost.set(total_cost)
+
+    def create_widgets(self):
+        # Create widgets for the login form
+        login_frame = tk.Frame(self.root)
+        login_frame.pack()
+
+        tk.Label(login_frame, text='Username:').grid(row=0, column=0)
+        tk.Entry(login_frame, textvariable=self.username).grid(row=0, column=1)
+
+        tk.Label(login_frame, text='Password:').grid(row=1, column=0)
+        tk.Entry(login_frame, textvariable=self.password, show='*').grid(row=1, column=1)
+
+        tk.Button(login_frame, text='Login', command=self.login).grid(row=2, column=0)
+        tk.Button(login_frame, text='Create Account', command=self.create_account).grid(row=2, column=1)
+
+        # Create widgets for the booking form (not implemented here)
+        booking_frame = tk.Frame(self.root)
+        # Implement the widgets for the booking form
+
+if __name__ == '__main__':
+    root = tk.Tk()
+    app = TaxiBookingSystem(root)
+    root.mainloop()
