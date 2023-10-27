@@ -1,0 +1,190 @@
+import tkinter as tk
+import tkinter.messagebox
+from random import choice
+from PIL import ImageTk, Image
+
+from settings import Color, Board
+from board import LudoBoard
+from dice import Dice
+
+class Coin:
+
+    def __init__(self, master, x, y, color, path_list, flag):
+        self.canvas = master
+        self.curr_x, self.curr_y = x, y
+        self.home_x, self.home_y = x, y
+        self.color = color
+        self.curr_index = -1
+        self.coin_image = ImageTk.PhotoImage(Image.open(f'./assets/{color}.png'))
+        self.img = self.canvas.create_image(x, y, anchor=tk.NW, image=self.coin_image)
+        self.canvas.tag_bind(self.img, '<1>', self.moveCoin)
+        self.disable = True
+        self.path_list = path_list
+        self.flag = flag
+        self.win = 0
+        self.pad_x = 0
+
+    def moveCoin(self, event):
+        if self.disable:
+            return
+        roll = Dice.roll
+
+        if len(roll) == 0:
+            return
+
+        if roll[-1] == 6:
+            tkinter.messagebox.showerror('Error', 'You got 6, Please Roll Again')
+            return
+
+        if len(roll) != 0:
+            n = len(self.path_list)
+            max_moves = n - self.curr_index - 1
+            if max_moves < roll[0]:
+                return
+
+        check = (False, 0, 0)
+        congrats = False
+
+        if self.is_at_home():
+            if 6 in roll:
+                check = self.can_attack(0)
+                self.update_coin_position(0)
+                Dice.remove_by_index(6)
+        else:
+            check = self.can_attack(self.curr_index + roll[0])
+            for _ in range(roll[0] - 1):
+                self.curr_index += 1
+                self.update_coin_position(self.curr_index)
+                self.canvas.update()
+                sleep(0.05)
+
+            self.curr_index += 1
+            self.update_coin_position(self.curr_index)
+
+            if check[0]:
+                self.handle_attack(check[1], check[2])
+
+            self.canvas.update()
+            sleep(0.05)
+            Dice.remove()
+
+            if self.curr_index == len(self.path_list) - 1:
+                self.win = 1
+                tkinter.messagebox.showinfo('INFO', '!! Congratulations !!\nPlease Roll Dice Again')
+                congrats = self.congratulations()
+
+            if check[0]:
+                tkinter.messagebox.showinfo('INFO', 'You killed another coin! Now you get another chance.\nPlease Roll Dice Again')
+                congrats = self.congratulations()
+
+        if self.is_player_won():
+            tkinter.messagebox.showinfo('INFO', f'{self.color.title()} Wins')
+            position.append(self.player.title())
+            Dice.roll = []
+            Dice.set(self.flag)
+
+        if self.is_gameover():
+            root.quit()
+
+        if not check[0] and not congrats:
+            if len(Dice.roll):
+                Dice.check_move_possibility()
+            self.next_turn()
+
+    def congratulations(self):
+        Dice.update_state()
+        Dice.set(self.flag - 1)
+        return True
+
+    def change_state(self, flag):
+        self.disable = flag != self.flag
+
+    def is_at_home(self):
+        return self.curr_x == self.home_x and self.curr_y == self.home_y
+
+    def check_home(self):
+        count = sum(1 for goti in colors[self.flag] if goti.is_at_home())
+        return count
+
+    def is_player_won(self):
+        reached = sum(1 for goti in colors[self.flag] if goti.win)
+        return reached == 4
+
+    def is_gameover(self):
+        color_reached = 0
+
+        for i in range(4):
+            game = 0
+            for color in colors[i]:
+                if color.win:
+                    game += 1
+            if game == 4:
+                color_reached += 1
+
+        if color_reached == 3:
+            tkinter.messagebox.showinfo('Game Over', '\n\n1. {}\n\n2. {}\n\n3. {}'.format(*position))
+        else:
+            return False
+        return True
+
+    def can_attack(self, idx):
+        max_pad = 0
+        count_a = 0
+        x, y = self.path_list[idx][0], self.path_list[idx][1]
+
+        for i in range(4):
+            for j in range(4):
+                if colors[i][j].curr_x == x and colors[i][j].curr_y == y:
+                    if colors[i][j].pad_x > max_pad:
+                        max_pad = colors[i][j].pad_x
+                    count_a += 1
+
+        if not self.path_list[idx][2]:
+            for i in range(4):
+                if max_pad == self.pad_x and not count_a == 1:
+                    continue
+                if colors[self.flag][i].curr_x == x and colors[self.flag][i].curr_y == y and not colors[self.flag][i].pad_x > self.pad_x:
+                    return False, x, y
+            return True, x, y
+        return False, x, y
+
+    def handle_attack(self, x, y):
+        for i in range(4):
+            if colors[self.flag][i].curr_x == x and colors[self.flag][i].curr_y == y:
+                colors[self.flag][i].reset_position()
+
+
+def start_game():
+    global canvas, colors, Dice, position, root, if_rolled, if_roll_possible
+    canvas = tk.Canvas(root, width=720, height=720, bg='white')
+    canvas.pack()
+
+    colors = [[Coin(canvas, 0, 0, 'blue', Board.blue, 0), Coin(canvas, 0, 0, 'blue', Board.blue, 0),
+               Coin(canvas, 0, 0, 'blue', Board.blue, 0), Coin(canvas, 0, 0, 'blue', Board.blue, 0)],
+              [Coin(canvas, 0, 0, 'green', Board.green, 1), Coin(canvas, 0, 0, 'green', Board.green, 1),
+               Coin(canvas, 0, 0, 'green', Board.green, 1), Coin(canvas, 0, 0, 'green', Board.green, 1)],
+              [Coin(canvas, 0, 0, 'yellow', Board.yellow, 2), Coin(canvas, 0, 0, 'yellow', Board.yellow, 2),
+               Coin(canvas, 0, 0, 'yellow', Board.yellow, 2), Coin(canvas, 0, 0, 'yellow', Board.yellow, 2)],
+              [Coin(canvas, 0, 0, 'red', Board.red, 3), Coin(canvas, 0, 0, 'red', Board.red, 3),
+               Coin(canvas, 0, 0, 'red', Board.red, 3), Coin(canvas, 0, 0, 'red', Board.red, 3)]]
+
+    if_rolled = [tk.Label(root, text=f'{Color.color[i].title()} -> ', fg=i) for i in Color.color]
+    if_roll_possible = [tk.Label(root, text='     --     ') for _ in range(3)]
+    [i.pack() for i in if_rolled]
+    [i.pack() for i in if_roll_possible]
+
+    Dice = Dice(canvas, colors)
+
+    canvas.create_rectangle(25, 25, 695, 695)
+
+    Dice.set(0)
+    Dice.animate_roll(0)
+    canvas.mainloop()
+
+
+if __name__ == '__main__':
+    position = []
+    Dice = None
+    colors = []
+    root = tk.Tk()
+    start_game()
